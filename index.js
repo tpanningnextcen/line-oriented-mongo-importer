@@ -6,6 +6,8 @@ module.exports = {
     process: process
 };
 
+var outstandingInserts = 0;
+
 function printHelp(scriptName) {
     console.log("To import one or more files:");
     console.log("  " + scriptName + "[options] file1 [file2 [file3 [...]]]");
@@ -80,8 +82,11 @@ function readFiles(collection, filenames, lineProcessor, stdin, doneCallback) {
     var input;
     var waitForOutstandingInserts = function() {
         // Wait for any outstanding inserts to finish
-
-        doneCallback();
+        if (outstandingInserts > 0) {
+            setTimeout(waitForOutstandingInserts, 10000);
+        } else {
+            doneCallback();
+        }
     };
 
     if(filenames[0] === '-') {
@@ -139,11 +144,13 @@ function insertRecord(collection, line, filename, lineNumber, lineProcessor) {
     var recordId = filename + '-' + zeroPad(lineNumber, 12);
     var doc = lineProcessor({text: line, filename: filename, lineNumber: lineNumber, recordId: recordId});
     if (doc) {
+        ++outstandingInserts;
         collection.insert(doc, {w: 1}, function(err, doc) {
             if(err) {
                 console.log(err);
                 console.log(filename + ":" + lineNumber + " " + line);
             }
+            --outstandingInserts;
         });
     }
 }
