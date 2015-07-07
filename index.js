@@ -20,7 +20,7 @@ function printHelp(scriptName) {
     console.log("  --collection MongoDB collection name");
 }
 
-function process(argv, lineProcessor, doneCallback) {
+function process(argv, stdin, lineProcessor, doneCallback) {
     if(argv.length < 2) {
         throw "There needs to be at least two elements in argv";
     }
@@ -71,11 +71,11 @@ function process(argv, lineProcessor, doneCallback) {
         //bulk = collection.initializeUnorderedBulkOp();
         //console.log(bulk.toString());
 
-        readFiles(collection, files, lineProcessor, doneCallback);
+        readFiles(collection, files, lineProcessor, stdin, doneCallback);
     });
 }
 
-function readFiles(collection, filenames, lineProcessor, doneCallback) {
+function readFiles(collection, filenames, lineProcessor, stdin, doneCallback) {
     var filename;
     var input;
     var waitForOutstandingInserts = function() {
@@ -91,8 +91,8 @@ function readFiles(collection, filenames, lineProcessor, doneCallback) {
             filename = randomId();
         }
         console.log("Processing stdin with id: " + filename);
-        input = process.stdin;
-        readFile(collection, input, filename, lineProcessor, file, waitForOutstandingInserts);
+        input = stdin;
+        readFile(collection, input, filename, lineProcessor, waitForOutstandingInserts);
     } else {
         async.eachSeries(filenames, function(filename, fileFinished) {
             console.log("Processing " + filename);
